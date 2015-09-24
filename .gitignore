@@ -1,14 +1,21 @@
-# http://www.gnu.org/software/automake
-
-Makefile.in
-
-# http://www.gnu.org/software/autoconf
-
-/autom4te.cache
 /aclocal.m4
+/autom4te.cache
 /compile
+/config.guess
+/config.h
+/config.h.in
+/config.log
+/config.status
+/config.sub
 /configure
 /depcomp
 /install-sh
+/libtool
+/ltmain.sh
 /missing
 /stamp-h1
+Makefile
+Makefile.in
+.deps
+.lib
+*.[aios]
