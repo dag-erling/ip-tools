@@ -242,6 +242,11 @@ parse_line(struct node *tree, const char *line, size_t len)
 		goto invalid;
 	memcpy(str, p, q - p);
 	str[q - p] = '\0';
+	/*
+	 * Some inet_network() implementations will not complain about
+	 * trailing garbage after a valid address.  We should have our own
+	 * implementation.
+	 */
 	if ((first = (uint32_t)inet_network(str)) == INADDR_NONE)
 		goto invalid;
 
@@ -282,7 +287,7 @@ parse_line(struct node *tree, const char *line, size_t len)
 	insert_range(tree, first, last);
 	return (0);
 invalid:
-	warnx("invalid line: %.*s", (int)len, line);
+	warnx("not an address, range or subnet: %.*s", (int)len, line);
 	return (-1);
 misaligned:
 	warnx("misaligned subnet: %.*s", (int)len, line);
@@ -296,15 +301,23 @@ misaligned:
 void
 read_from_file(struct node *tree, FILE *f)
 {
-	static char *line;
+	static char *line, *arg;
 	static size_t size;
 	ssize_t len;
+	unsigned int i;
 
 	while ((len = getline(&line, &size, f)) >= 0) {
-		while (len > 0 && isspace(line[len - 1]))
+		arg = line;
+		while (len > 0 && isspace((unsigned char)arg[0]))
+			++arg, --len;
+		for (i = 0; i < len; ++i)
+			if (arg[i] == '#')
+				break;
+		len = i;
+		while (len > 0 && isspace((unsigned char)arg[len - 1]))
 			--len;
 		if (len > 0)
-			(void)parse_line(tree, line, len);
+			(void)parse_line(tree, arg, len);
 	}
 }
 
@@ -316,7 +329,7 @@ usage(void)
 {
 
 	fprintf(stderr, "usage: ipagg [-nsv] [-1|-2|-3|-4] "
-	    "[-P minplen] [-p maxplen]\n");
+	    "[-a maxplen] [-i minplen]\n");
 	exit(1);
 }
 
@@ -324,10 +337,9 @@ int
 main(int argc, char *argv[])
 {
 	struct node *tree;
-	FILE *f;
 	int i, opt;
 
-	while ((opt = getopt(argc, argv, "1234hnP:p:sv")) != -1)
+	while ((opt = getopt(argc, argv, "1234a:hi:nsv")) != -1)
 		switch (opt) {
 		case '1':
 		case '2':
@@ -335,18 +347,18 @@ main(int argc, char *argv[])
 		case '4':
 			bits = opt - '0';
 			break;
-		case 'n':
-			aggregate = 0;
+		case 'a':
+			maxplen = atoi(optarg);
+			if (maxplen < 8 || maxplen > 32)
+				errx(1, "invalid parameter: -%c %s", opt, optarg);
 			break;
-		case 'P':
+		case 'i':
 			minplen = atoi(optarg);
 			if (minplen < 4 || minplen > 28)
 				errx(1, "invalid parameter: -%c %s", opt, optarg);
 			break;
-		case 'p':
-			maxplen = atoi(optarg);
-			if (maxplen < 8 || maxplen > 32)
-				errx(1, "invalid parameter: -%c %s", opt, optarg);
+		case 'n':
+			aggregate = 0;
 			break;
 		case 's':
 			prefix32 = 0;
@@ -373,15 +385,9 @@ main(int argc, char *argv[])
 	 * aggregating on the fly.
 	 */
 	if (argc > 0) {
-		/* read from files listed on the command line */
-		for (i = 0; i < argc; ++i) {
-			if ((f = fopen(argv[i], "r")) == NULL)
-				err(1, "%s", argv[i]);
-			read_from_file(tree, f);
-			if (ferror(f))
-				err(1, "%s", argv[i]);
-			fclose(f);
-		}
+		/* parse arguments listed on the command line */
+		for (i = 0; i < argc; ++i)
+			parse_line(tree, argv[i], strlen(argv[i]));
 	} else {
 		/* read from standard input */
 		read_from_file(tree, stdin);
