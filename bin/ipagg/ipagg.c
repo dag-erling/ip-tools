@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2015 Universitetet i Oslo
+ * Copyright (c) 2015-2018 Universitetet i Oslo
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -79,7 +79,7 @@ struct node {
 /*
  * Print the leaf nodes of a tree in order.
  */
-void
+static void
 print_tree(struct node *n)
 {
 	unsigned int i;
@@ -103,7 +103,7 @@ print_tree(struct node *n)
 /*
  * Delete all children of a given node in a tree.
  */
-void
+static void
 delete_children(struct node *n)
 {
 	unsigned int i;
@@ -120,7 +120,7 @@ delete_children(struct node *n)
 /*
  * Insert a range of addresses (specified as first and last) into a tree.
  */
-void
+static void
 insert_range(struct node *n, uint32_t first, uint32_t last)
 {
 	struct node *sn;
@@ -227,7 +227,7 @@ insert_range(struct node *n, uint32_t first, uint32_t last)
  * Parse a line, which contains either a single address, a pair of
  * addresses separated by a hyphen, or a range in CIDR notation.
  */
-int
+static int
 parse_line(struct node *tree, const char *line, size_t len)
 {
 	char str[64];
@@ -298,7 +298,7 @@ misaligned:
  * Read lines from a file, strip trailing whitespace and pass to the
  * parser.
  */
-void
+static void
 read_from_file(struct node *tree, FILE *f)
 {
 	static char *line, *arg;
