@@ -63,6 +63,7 @@ static unsigned int maxplen = 24;
  * Flags
  */
 static int aggregate = 1;	/* perform aggregation */
+static int filter = 0;		/* print as filter expression */
 static int prefix32 = 1;	/* also print prefix for /32 */
 
 /*
@@ -75,6 +76,37 @@ struct node {
 	uint32_t	 coverage;	/* how full the subtree is */
 	struct node	*sub[16];	/* children */
 };
+
+/*
+ * Print out a tree in PCAP filter syntax.
+ */
+static void
+print_filter(struct node *n)
+{
+	unsigned int i, or;
+
+	if (n->leaf) {
+		printf("%s ", n->plen < 32 ? "net" : "host");
+		printf("%u.%u.%u.%u",
+		    (n->addr >> 24) & 0xff,
+		    (n->addr >> 16) & 0xff,
+		    (n->addr >> 8) & 0xff,
+		    n->addr & 0xff);
+		if (n->plen < 32)
+			printf("/%u", n->plen);
+	} else {
+		for (i = or = 0; i < (1U << bits); ++i) {
+			if (n->sub[i] != NULL) {
+				if (or)
+					printf(" or ");
+				print_filter(n->sub[i]);
+				or = 1;
+			}
+		}
+	}
+	if (n->plen == 0)
+		printf("\n");
+}
 
 /*
  * Print the leaf nodes of a tree in order.
@@ -328,7 +360,7 @@ static void
 usage(void)
 {
 
-	fprintf(stderr, "usage: ipagg [-nsv] [-1|-2|-3|-4] "
+	fprintf(stderr, "usage: ipagg [-fnsv] [-1|-2|-3|-4] "
 	    "[-a maxplen] [-i minplen]\n");
 	exit(1);
 }
@@ -339,7 +371,7 @@ main(int argc, char *argv[])
 	struct node *tree;
 	int i, opt;
 
-	while ((opt = getopt(argc, argv, "1234a:hi:nsv")) != -1)
+	while ((opt = getopt(argc, argv, "1234a:fhi:nsv")) != -1)
 		switch (opt) {
 		case '1':
 		case '2':
@@ -351,6 +383,9 @@ main(int argc, char *argv[])
 			maxplen = atoi(optarg);
 			if (maxplen < 8 || maxplen > 32)
 				errx(1, "invalid parameter: -%c %s", opt, optarg);
+			break;
+		case 'f':
+			filter = 1;
 			break;
 		case 'i':
 			minplen = atoi(optarg);
@@ -396,7 +431,10 @@ main(int argc, char *argv[])
 	/*
 	 * Print the contents of the tree.
 	 */
-	print_tree(tree);
+	if (filter)
+		print_filter(tree);
+	else
+		print_tree(tree);
 
 	exit(0);
 }

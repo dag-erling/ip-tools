@@ -1,5 +1,5 @@
 .\"-
-.\" Copyright (c) 2015 Universitetet i Oslo
+.\" Copyright (c) 2015-2018 Universitetet i Oslo
 .\" All rights reserved.
 .\"
 .\" Redistribution and use in source and binary forms, with or without
@@ -26,7 +26,7 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.Dd September 24, 2015
+.Dd November 23, 2018
 .Dt IPAGG 1
 .Os
 .Sh NAME
@@ -34,7 +34,7 @@
 .Nd Sort and coalesce IPv4 addresses and ranges
 .Sh SYNOPSIS
 .Nm
-.Op Fl nsv
+.Op Fl fnsv
 .Op Fl 1 | Fl 2 | Fl 3 | Fl 4
 .Op Fl a Ar maxplen
 .Op Fl i Ar minplen
@@ -92,6 +92,8 @@ Maximum prefix length, between 8 and 32.
 Ranges with longer prefix lengths than the maximum (i.e. smaller
 subnets) will be rounded up.
 The default is 24.
+.It Fl f
+Print the result as a PCAP filter expression.
 .It Fl i Ar minplen
 Minimum prefix length, between 4 and 28.
 Ranges with shorter prefix lengths than the minimum (i.e. larger
@@ -104,6 +106,9 @@ This can be used to simply sort a list of addresses or ranges.
 Note that deaggregation may still take place as described above.
 .It Fl s
 Omit the prefix length from the output when it is 32.
+This has no effect if the
+.It Fl f
+option was specified.
 .It Fl v
 Print verbose information while constructing the tree.
 .El
