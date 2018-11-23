@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([ip-tools], [20150923])
+AC_INIT([ip-tools], [1.20181123])
 AC_CONFIG_SRCDIR([bin/ipagg/ipagg.c])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign])
